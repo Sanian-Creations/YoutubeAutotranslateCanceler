@@ -17,35 +17,35 @@
     /*
     Get a YouTube Data v3 API key from https://console.developers.google.com/apis/library/youtube.googleapis.com?q=YoutubeData
     */
-    var NO_API_KEY = false;
-    var api_key_awaited = await GM.getValue("api_key");
+    let NO_API_KEY = false;
+    let api_key_awaited = await GM.getValue("api_key");
     if (api_key_awaited === undefined || api_key_awaited === null || api_key_awaited === "") {
         await GM.setValue("api_key", prompt("Enter your API key. Go to https://developers.google.com/youtube/v3/getting-started to know how to obtain an API key, then go to https://console.developers.google.com/apis/api/youtube.googleapis.com/ in order to enable Youtube Data API for your key."));
     }
 
-    var api_key_awaited = await GM.getValue("api_key");
+    api_key_awaited = await GM.getValue("api_key");
     if (api_key_awaited === undefined || api_key_awaited === null || api_key_awaited === "") {
         NO_API_KEY = true; // Resets after page reload, still allows local title to be replaced
         console.log("NO API KEY PRESENT");
     }
     const API_KEY = await GM.getValue("api_key");
-    var API_KEY_VALID = false;
+    let API_KEY_VALID = false;
     console.log(API_KEY);
 
-    var url_template = "https://www.googleapis.com/youtube/v3/videos?part=snippet&id={IDs}&key=" + API_KEY;
+    let url_template = "https://www.googleapis.com/youtube/v3/videos?part=snippet&id={IDs}&key=" + API_KEY;
 
-    var cachedTitles = {} // Dictionary(id, title): Cache of API fetches, survives only Youtube Autoplay
+    let cachedTitles = {} // Dictionary(id, title): Cache of API fetches, survives only Youtube Autoplay
 
-    var currentLocation; // String: Current page URL
-    var changedDescription; // Bool: Changed description
-    var alreadyChanged; // List(string): Links already changed
+    let currentLocation; // String: Current page URL
+    let changedDescription; // Bool: Changed description
+    let alreadyChanged; // List(string): Links already changed
 
     function getVideoID(a) {
         while (a.tagName != "A") {
             a = a.parentNode;
         }
-        var href = a.href;
-        var tmp = href.split('v=')[1];
+        let href = a.href;
+        let tmp = href.split('v=')[1];
         return tmp.split('&')[0];
     }
 
@@ -62,8 +62,8 @@
 
         // MAIN TITLE - no API key required
         if (window.location.href.includes("/watch")) {
-            var titleMatch = document.title.match(/^(?:\([0-9]+\) )?(.*?)(?: - YouTube)$/); // ("(n) ") + "TITLE - YouTube"
-            var pageTitle = document.getElementsByClassName("title style-scope ytd-video-primary-info-renderer");
+            let titleMatch = document.title.match(/^(?:\([0-9]+\) )?(.*?)(?: - YouTube)$/); // ("(n) ") + "TITLE - YouTube"
+            let pageTitle = document.getElementsByClassName("title style-scope ytd-video-primary-info-renderer");
             if (pageTitle.length > 0 && pageTitle[0] !== undefined && titleMatch != null) {
                 if (pageTitle[0].innerText != titleMatch[1]) {
                     console.log("Reverting main video title '" + pageTitle[0].innerText + "' to '" + titleMatch[1] + "'");
@@ -76,13 +76,13 @@
             return;
         }
 
-        var APIcallIDs;
+        let APIcallIDs;
 
         // REFERENCED VIDEO TITLES - find video link elements in the page that have not yet been changed
-        var links = Array.prototype.slice.call(document.getElementsByTagName("a")).filter(a => {
+        let links = Array.prototype.slice.call(document.getElementsByTagName("a")).filter(a => {
             return a.id == 'video-title' && alreadyChanged.indexOf(a) == -1;
         });
-        var spans = Array.prototype.slice.call(document.getElementsByTagName("span")).filter(a => {
+        let spans = Array.prototype.slice.call(document.getElementsByTagName("span")).filter(a => {
             return a.id == 'video-title' &&
                 !a.className.includes("-radio-") &&
                 !a.className.includes("-playlist-") &&
@@ -91,7 +91,7 @@
         links = links.concat(spans).slice(0, 30);
 
         // MAIN VIDEO DESCRIPTION - request to load original video description
-        var mainVidID = "";
+        let mainVidID = "";
         if (!changedDescription && window.location.href.includes("/watch")) {
             mainVidID = window.location.href.split('v=')[1].split('&')[0];
         }
@@ -102,16 +102,16 @@
             console.log("Checking " + (mainVidID != "" ? "main video and " : "") + links.length + " video titles!");
 
             // Get all videoIDs to put in the API request
-            var IDs = links.map(a => getVideoID(a));
-            var APIFetchIDs = IDs.filter(id => cachedTitles[id] === undefined);
-            var requestUrl = url_template.replace("{IDs}", (mainVidID != "" ? (mainVidID + ",") : "") + APIFetchIDs.join(','));
+            let IDs = links.map(a => getVideoID(a));
+            let APIFetchIDs = IDs.filter(id => cachedTitles[id] === undefined);
+            let requestUrl = url_template.replace("{IDs}", (mainVidID != "" ? (mainVidID + ",") : "") + APIFetchIDs.join(','));
 
             // Issue API request
-            var xhr = new XMLHttpRequest();
+            let xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
                     // Success
-                    var data = JSON.parse(xhr.responseText);
+                    let data = JSON.parse(xhr.responseText);
 
                     if (data.kind == "youtube#videoListResponse") {
                         API_KEY_VALID = true;
@@ -119,8 +119,8 @@
 
                         if (mainVidID != "") {
                             // Replace Main Video Description
-                            var videoDescription = data[0].snippet.description;
-                            var pageDescription = document.getElementsByClassName("content style-scope ytd-video-secondary-info-renderer");
+                            let videoDescription = data[0].snippet.description;
+                            let pageDescription = document.getElementsByClassName("content style-scope ytd-video-secondary-info-renderer");
                             if (pageDescription.length > 0 && videoDescription != null && pageDescription[0] !== undefined) {
                                 // linkify replaces links correctly, but without redirect or other specific youtube stuff (no problem if missing)
                                 // Still critical, since it replaces ALL descriptions, even if it was not translated in the first place (no easy comparision possible)
@@ -136,15 +136,15 @@
                         });
 
                         // Change all previously found link elements
-                        for (var i = 0; i < links.length; i++) {
-                            var curID = getVideoID(links[i]);
+                        for (let i = 0; i < links.length; i++) {
+                            let curID = getVideoID(links[i]);
                             if (curID !== IDs[i]) { // Can happen when Youtube was still loading when script was invoked
                                 console.log("YouTube was too slow again...");
                                 changedDescription = false; // Might not have been loaded aswell - fixes rare errors
                             }
                             if (cachedTitles[curID] !== undefined) {
-                                var originalTitle = cachedTitles[curID];
-                                var pageTitle = links[i].innerText.trim();
+                                let originalTitle = cachedTitles[curID];
+                                let pageTitle = links[i].innerText.trim();
                                 if (pageTitle != originalTitle.replace(/\s{2,}/g, ' ')) {
                                     console.log("'" + pageTitle + "' --> '" + originalTitle + "'");
                                     links[i].innerText = originalTitle;
@@ -174,7 +174,7 @@
     }
 
     function linkify(inputText) {
-        var replacedText, replacePattern1, replacePattern2, replacePattern3;
+        let replacedText, replacePattern1, replacePattern2, replacePattern3;
 
         //URLs starting with http://, https://, or ftp://
         replacePattern1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
